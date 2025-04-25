@@ -1,5 +1,6 @@
 part of 'notifications_bloc.dart';
 
+// define los estados posibles que pueden tener tu ui segun los datos
 class NotificationsState extends Equatable {
 
   final AuthorizationStatus status;
