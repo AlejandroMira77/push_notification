@@ -11,9 +11,13 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   
   NotificationsBloc() : super(const NotificationsState()) {
-    // on<NotificationsEvent>((event, emit) {
-    //   // TODO: implement event handler
-    // });
+
+    on<NotificationStatusChanged>(_notificationStatusChanged);
+
+    // verificar estado de las notificaciones
+    _initialStatusCheck();
+    // listener para notificaciones en foreground
+    _onForegroundMessage();
   }
 
   void requestPermission() async {
@@ -28,6 +32,37 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
       sound: true,
     );
 
-    settings.authorizationStatus;
+    add(NotificationStatusChanged(settings.authorizationStatus));
+  }
+
+  void _notificationStatusChanged(NotificationStatusChanged event, Emitter<NotificationsState> emit) {
+    emit(
+      state.copyWith(
+        status: event.status
+      )
+    );
+    _getToken();
+  }
+
+  void _initialStatusCheck() async {
+    final settings = await messaging.getNotificationSettings();
+    add(NotificationStatusChanged(settings.authorizationStatus));
+  }
+
+  void _getToken() async {
+    if(state.status != AuthorizationStatus.authorized) return;
+    final token = await messaging.getToken();
+    print('-------------------');
+    print(token);
+  }
+
+  void _handleRemoteMessage(RemoteMessage message) {
+    print('Message data: ${message.data}');
+    if(message.notification == null) return;
+    print('Message notification: ${message.notification}');
+  }
+
+  void _onForegroundMessage() {
+    FirebaseMessaging.onMessage.listen(_handleRemoteMessage);
   }
 }
